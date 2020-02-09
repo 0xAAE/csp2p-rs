@@ -3,6 +3,7 @@ pub type NodeHandler = extern "C" fn(id: *const u8, id_size: usize);
 
 #[link(name = "p2p-compat")]
 extern "C" {
+    pub fn host_init(key: *const u8, key_size: usize);
     pub fn host_start();
     pub fn host_stop();
 

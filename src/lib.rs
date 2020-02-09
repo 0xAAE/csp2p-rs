@@ -30,7 +30,14 @@ pub struct CSHost {
 
 impl CSHost {
 
-    pub fn new() -> Option<CSHost> {
+    pub fn new(public_key: &PublicKey) -> Option<CSHost> {
+        unsafe {
+            let bytes = public_key.to_bytes();
+            let data: *const u8 = bytes.as_ptr();
+            let len = bytes.len(); 
+            raw::host_init(data, len);
+        }
+
         Some(CSHost {
             running: false
         })
