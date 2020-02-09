@@ -1,13 +1,12 @@
+pub type MessageHandler = extern "C" fn(id: *const u8, id_size: usize, data: *mut u8, data_size: usize);
+pub type NodeHandler = extern "C" fn(id: *const u8, id_size: usize);
+
 #[link(name = "p2p-compat")]
-
-pub type MessageHandler = fn(id: *const u8, id_size: usize, data: *mut u8, data_size: usize);
-pub type NodeHandler = fn(id: *const u8, id_size: usize);
-
-extern {
+extern "C" {
     pub fn host_start();
     pub fn host_stop();
 
-    pub fn set_host_message_handler(pfn: MessageHandler);
-    pub fn set_host_discover_node_handler(pfn: NodeHandler);
-    pub fn set_host_lost_node(pfn: NodeHandler);
+    pub fn set_message_handler(pfn: MessageHandler);
+    pub fn set_node_discovered_handler(pfn: NodeHandler);
+    pub fn set_node_removed_handler(pfn: NodeHandler);
 }

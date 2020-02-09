@@ -1,15 +1,28 @@
 extern crate bitcoin;
 use bitcoin::util::key::PublicKey;
+mod raw;
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
+#[test]
+fn it_works() {
+    unsafe {
+        raw::host_start();
+        raw::set_message_handler(on_message);
+        raw::set_node_discovered_handler(on_node_found);
+        raw::set_node_discovered_handler(on_node_lost);
     }
 }
 
-mod raw;
+extern "C" fn on_message(id: *const u8, id_size: usize, data: *mut u8, data_size: usize) {
+    println!("message received");
+}
+
+extern "C" fn on_node_found(id: *const u8, id_size: usize) {
+    println!("node found");
+}
+
+extern "C" fn on_node_lost(id: *const u8, id_size: usize) {
+    println!("node lost");
+}
 
 pub struct CSHost {
     running: bool
@@ -30,9 +43,9 @@ impl CSHost {
 
         unsafe {
             raw::host_start();
-            raw::set_host_message_handler(CSHost::on_message);
-            raw::set_host_discover_node_handler(CSHost::on_node_found);
-            raw::set_host_lost_node(CSHost::on_node_lost);
+            raw::set_message_handler(CSHost::on_message);
+            raw::set_node_discovered_handler(CSHost::on_node_found);
+            raw::set_node_removed_handler(CSHost::on_node_lost);
         }
 
         self.running = true;
@@ -48,15 +61,15 @@ impl CSHost {
         }
     }
 
-    fn on_message(id: *const u8, id_size: usize, data: *mut u8, data_size: usize) {
+    extern "C" fn on_message(id: *const u8, id_size: usize, data: *mut u8, data_size: usize) {
         println!("message received");
     }
 
-    fn on_node_found(id: *const u8, id_size: usize) {
+    extern "C" fn on_node_found(id: *const u8, id_size: usize) {
         println!("node found");
     }
 
-    fn on_node_lost(id: *const u8, id_size: usize) {
+    extern "C" fn on_node_lost(id: *const u8, id_size: usize) {
         println!("node lost");
     }
 }
