@@ -5,5 +5,5 @@ fn main() {
     println!(r"cargo:rustc-link-lib=static=bitcoin_utils");
     println!(r"cargo:rustc-link-lib=static=easylogging");
     println!(r"cargo:rustc-link-lib=static=miniupnpc");
-    //println!("cargo:rustc-link-lib=static=stdc++");
+    println!("cargo:rustc-link-lib=dylib=stdc++");
 }
