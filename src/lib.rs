@@ -1,10 +1,12 @@
-extern crate bitcoin;
-use bitcoin::util::key::PublicKey;
 mod raw;
 
 #[test]
 fn it_works() {
     unsafe {
+        let bbb = [0u8; 32];
+        let data: *const u8 = bbb.as_ptr();
+        let len = bbb.len(); 
+        raw::host_init(data, len);
         raw::host_start();
         raw::set_message_handler(on_message);
         raw::set_node_discovered_handler(on_node_found);
@@ -24,23 +26,43 @@ extern "C" fn on_node_lost(id: *const u8, id_size: usize) {
     println!("node lost");
 }
 
+pub struct NodeInfo {
+    pub id: Vec<u8>,
+    pub ip: String,
+    pub port: u16
+}
+
 pub struct CSHost {
     running: bool
 }
 
 impl CSHost {
 
-    pub fn new(public_key: &PublicKey) -> Option<CSHost> {
+    pub fn new(public_key: &[u8]) -> Option<CSHost> {
+        let len = public_key.len();
+        if len != 32 {
+            return None;
+        }
         unsafe {
-            let bytes = public_key.to_bytes();
-            let data: *const u8 = bytes.as_ptr();
-            let len = bytes.len(); 
+            let data: *const u8 = public_key.as_ptr();
             raw::host_init(data, len);
         }
 
         Some(CSHost {
             running: false
         })
+    }
+
+    pub fn add_known_hosts(&self, hosts: Vec<NodeInfo>) {
+        for h in hosts {
+            if h.id.len() != 32 {
+                // todo panic!
+                continue;
+            }
+            unsafe {
+                raw::host_add_entry_point(h.id.as_ptr(), h.id.len(), h.ip.as_ptr(), h.ip.len(), h.port);
+            }
+        }
     }
 
     pub fn start(&mut self) -> bool {
