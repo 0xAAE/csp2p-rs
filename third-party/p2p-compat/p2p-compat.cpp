@@ -48,10 +48,15 @@ namespace
                     ptr_config->listen_port = 0;
                 }
                 ptr_config->traverse_nat = config.traverse_nat;
-                if(config.use_default_boot_nodes && !config.custom_boot_nodes.empty()) {
-                    ptr_config->use_default_boot_nodes = true;
+                if(!config.use_default_boot_nodes && !config.custom_boot_nodes.empty()) {
+                    ptr_config->use_default_boot_nodes = false;
                     ptr_config->custom_boot_nodes = config.custom_boot_nodes;
                 }
+
+                std::cout << "init host: use def boot nodes=" << ptr_config->use_default_boot_nodes
+                    << ", addr=" << ptr_config->listen_address << ":" << ptr_config->listen_port
+                    << ", entry points " << ptr_config->custom_boot_nodes.size()
+                    << std::endl;
 
                 ptr_host = std::make_unique<Host>(*ptr_config, *this);
             }
@@ -154,19 +159,13 @@ void host_init(const uint8_t* key, size_t key_size) {
         std::copy(key, key + key_size, reinterpret_cast<uint8_t*>(id.GetPtr()));
     }
     else {
-        // todo panic! not valid id provided
+        std::cout << "host_init(): panic! not valid id provided" << std::endl;
     }
 }
 
 void host_add_entry_point(const uint8_t* key, size_t key_size, const uint8_t* ip, size_t ip_size, uint16_t port) {
-    // todo if(key_size != 32) panic!
-    std::string node_id;
-    node_id.resize(key_size);
-    std::copy(key, key + key_size, node_id.data());
-    std::vector<uint8_t> idBytes;
-    if (!DecodeBase58(node_id, idBytes)) {
-        // todo panic!
-        return;
+    if(key_size != 32) {
+        std::cout << "panic! wrong public key size " << key_size << ", must be 32" << std::endl;
     }
 
     std::string node_ip;
@@ -176,9 +175,13 @@ void host_add_entry_point(const uint8_t* key, size_t key_size, const uint8_t* ip
     net::NodeEntrance entry;
     entry.address = net::bi::address::from_string(node_ip);
     entry.udp_port = entry.tcp_port = port;
-    std::copy(idBytes.begin(), idBytes.end(), reinterpret_cast<uint8_t*>(entry.id.GetPtr()));
+    std::copy(key, key + key_size, reinterpret_cast<uint8_t*>(entry.id.GetPtr()));
 
-    HostParams::instance().custom_boot_nodes.push_back(entry);
+    auto& p = HostParams::instance();
+    p.use_default_boot_nodes = false;
+    p.custom_boot_nodes.push_back(entry);
+
+    std::cout << "Added entry node, total " << p.custom_boot_nodes.size();
 }
 
 void host_start() {
