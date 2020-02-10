@@ -17,19 +17,19 @@ namespace
 
     private:
 
-        static std::unique_ptr<HostParams*> ptr_params;
+        static std::unique_ptr<HostParams> ptr_params;
     };
 
     /*static*/
-    HostParams& instance() {
-        if(!ptr_params) {
-            ptr_params = std::make_unique<HostParams>();
+    HostParams& HostParams::instance() {
+        if(!HostParams::ptr_params) {
+            HostParams::ptr_params = std::make_unique<HostParams>();
         }
         return *HostParams::ptr_params.get();
     }
 
     /*static*/
-    std::unique_ptr<HostParams*> HostParams::ptr_params;
+    std::unique_ptr<HostParams> HostParams::ptr_params;
 
     class HostHandler: public HostEventHandler {
         public:
@@ -139,9 +139,9 @@ namespace
 }
 
 void host_init(const uint8_t* key, size_t key_size) {
-    if(id != nullptr && id.size() == id_size) {
-        const auto& id = HostParams::instance().id;
-        std::copy(id, id + id_size(), reinterpret_cast<uint8_t*>(id.GetPtr()));
+    auto& id = HostParams::instance().id;
+    if(key != nullptr && id.size() == key_size) {
+        std::copy(key, key + key_size, reinterpret_cast<uint8_t*>(id.GetPtr()));
     }
     else {
         // todo panic! not valid id provided
