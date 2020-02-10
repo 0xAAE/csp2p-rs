@@ -58,6 +58,16 @@ namespace
 
             virtual ~HostHandler() = default;
 
+            void run() {
+                if(ptr_host) {
+                    std::cout << "calling to host->Run()" << std::endl;
+                    ptr_host->Run();
+                }
+                else {
+                    std::cout << "unable to call to host->Run()" << std::endl;
+                }
+            }
+
             /*virtual*/
             void OnMessageReceived(const NodeId& from, ByteVector&& message) override;
             /*virtual*/
@@ -148,8 +158,33 @@ void host_init(const uint8_t* key, size_t key_size) {
     }
 }
 
+void host_add_entry_point(const uint8_t* key, size_t key_size, const uint8_t* ip, size_t ip_size, uint16_t port) {
+    // todo if(key_size != 32) panic!
+    std::string node_id;
+    node_id.resize(key_size);
+    std::copy(key, key + key_size, node_id.data());
+    std::vector<uint8_t> idBytes;
+    if (!DecodeBase58(node_id, idBytes)) {
+        // todo panic!
+        return;
+    }
+
+    std::string node_ip;
+    node_ip.resize(ip_size);
+    std::copy(ip, ip + ip_size, node_ip.data());
+
+    net::NodeEntrance entry;
+    entry.address = net::bi::address::from_string(node_ip);
+    entry.udp_port = entry.tcp_port = port;
+    std::copy(idBytes.begin(), idBytes.end(), reinterpret_cast<uint8_t*>(entry.id.GetPtr()));
+
+    HostParams::instance().custom_boot_nodes.push_back(entry);
+}
+
 void host_start() {
-    HostHandler::instance();
+    std::cout << "Starting p2p host" << std::endl;
+    HostHandler::instance().run();
+    std::cout << "p2p host started" << std::endl;
 }
 
 void host_stop() {

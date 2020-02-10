@@ -9,8 +9,10 @@ typedef void NODE_HANDLER(const uint8_t* key, size_t key_size);
 
 // C interface to Host
 
-extern "C" void host_start();
 
+extern "C" void host_init(const uint8_t* key, size_t key_size);
+extern "C" void host_add_entry_point(const uint8_t* key, size_t key_size, const uint8_t* ip, size_t ip_size, uint16_t port);
+extern "C" void host_start();
 extern "C" void host_stop();
 
 extern "C" void set_message_handler(MESSAGE_HANDLER* proc);
