@@ -1,4 +1,4 @@
-use std::{ptr, slice, str};
+use std::{ptr, slice};
 
 pub const NODE_ID_SIZE: usize = 32;
 pub type NodeId = [u8; NODE_ID_SIZE];
@@ -8,20 +8,6 @@ extern crate bitcoin;
 use bitcoin::util::base58;
 
 mod raw;
-
-#[test]
-fn it_works() {
-    unsafe {
-        let bbb: NodeId = Default::default();
-        let data: *const u8 = bbb.as_ptr();
-        let len = bbb.len(); 
-        raw::host_init(data, len);
-        raw::host_start();
-        raw::set_message_handler(on_message);
-        raw::set_node_discovered_handler(on_node_found);
-        raw::set_node_discovered_handler(on_node_lost);
-    }
-}
 
 pub struct NodeInfo {
     pub id: Vec<u8>,
