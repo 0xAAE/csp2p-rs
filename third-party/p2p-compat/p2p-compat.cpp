@@ -181,7 +181,7 @@ void host_add_entry_point(const uint8_t* key, size_t key_size, const uint8_t* ip
     p.use_default_boot_nodes = false;
     p.custom_boot_nodes.push_back(entry);
 
-    std::cout << "Added entry node, total " << p.custom_boot_nodes.size();
+    std::cout << "Added entry node, total " << p.custom_boot_nodes.size() << std::endl;
 }
 
 void host_start() {
