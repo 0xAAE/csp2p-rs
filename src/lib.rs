@@ -4,8 +4,8 @@ pub const NODE_ID_SIZE: usize = 32;
 pub type NodeId = [u8; NODE_ID_SIZE];
 
 extern crate hex; // hex::encode(node_id)
-extern crate bitcoin;
-use bitcoin::util::base58;
+extern crate base58;
+use base58::ToBase58; // [u8].to_base58()
 
 mod raw;
 
@@ -89,7 +89,7 @@ impl CSHost {
                 payload = slice::from_raw_parts(data, data_size).to_vec();
             }
         } 
-        println!("Message of {} bytes received from {}", payload.len(), base58::encode_slice(&node_id[..]));
+        println!("Message of {} bytes received from {}", payload.len(), node_id[..].to_base58());
     }
 
     extern "C" fn on_node_found(id: *const u8, id_size: usize) {
@@ -101,7 +101,7 @@ impl CSHost {
         unsafe {
             ptr::copy(id, node_id.as_mut_ptr(), node_id.len());
         }
-        println!("Node {} found",  base58::encode_slice(&node_id[..]));
+        println!("Node {} found",  node_id[..].to_base58());
     }
 
     extern "C" fn on_node_lost(id: *const u8, id_size: usize) {
@@ -113,6 +113,6 @@ impl CSHost {
         unsafe {
             ptr::copy(id, node_id.as_mut_ptr(), node_id.len());
         }
-        println!("Node {} lost", base58::encode_slice(&node_id[..]));
+        println!("Node {} lost", node_id[..].to_base58());
     }
 }
