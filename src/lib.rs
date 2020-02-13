@@ -1,4 +1,5 @@
 use std::{ptr, slice};
+use std::sync::mpsc::SyncSender;
 
 pub const NODE_ID_SIZE: usize = 32;
 pub type NodeId = [u8; NODE_ID_SIZE];
@@ -16,12 +17,13 @@ pub struct NodeInfo {
 }
 
 pub struct CSHost {
-    running: bool
+    running: bool,
+    tx: SyncSender<Vec<u8>>
 }
 
 impl CSHost {
 
-    pub fn new(node_id: &[u8]) -> Option<CSHost> {
+    pub fn new(node_id: &[u8], tx: SyncSender<Vec<u8>>) -> Option<CSHost> {
         let len = node_id.len();
         if len != NODE_ID_SIZE {
             return None;
@@ -32,7 +34,8 @@ impl CSHost {
         }
 
         Some(CSHost {
-            running: false
+            running: false,
+            tx: tx
         })
     }
 
