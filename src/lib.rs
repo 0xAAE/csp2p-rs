@@ -10,6 +10,8 @@ use base58::ToBase58; // [u8].to_base58()
 
 mod raw;
 
+static mut BYTES_SENDER: Option<SyncSender<Vec<u8>>> = None;
+
 pub struct NodeInfo {
     pub id: Vec<u8>,
     pub ip: String,
@@ -17,8 +19,7 @@ pub struct NodeInfo {
 }
 
 pub struct CSHost {
-    running: bool,
-    tx: SyncSender<Vec<u8>>
+    running: bool
 }
 
 impl CSHost {
@@ -33,9 +34,12 @@ impl CSHost {
             raw::host_init(data, len);
         }
 
+        unsafe {
+            BYTES_SENDER = Some(tx);
+        }
+
         Some(CSHost {
-            running: false,
-            tx: tx
+            running: false
         })
     }
 
@@ -92,7 +96,15 @@ impl CSHost {
                 payload = slice::from_raw_parts(data, data_size).to_vec();
             }
         } 
-        println!("Message of {} bytes received from {}", payload.len(), node_id[..].to_base58());
+        println!("Message of {} bytes received from {}", &payload.len(), node_id[..].to_base58());
+        unsafe {
+            match BYTES_SENDER.clone() {
+                None => (),
+                Some(tx) => {
+                    tx.send(payload).unwrap();
+                }
+            };
+        }
     }
 
     extern "C" fn on_node_found(id: *const u8, id_size: usize) {
