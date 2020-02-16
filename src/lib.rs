@@ -1,5 +1,8 @@
 use std::{ptr, slice};
-use std::sync::mpsc::SyncSender;
+use std::sync::mpsc::Sender;
+
+extern crate log;
+use log::info;
 
 pub const NODE_ID_SIZE: usize = 32;
 pub type NodeId = [u8; NODE_ID_SIZE];
@@ -10,7 +13,9 @@ use base58::ToBase58; // [u8].to_base58()
 
 mod raw;
 
-static mut BYTES_SENDER: Option<SyncSender<Vec<u8>>> = None;
+pub type RawPacket = (NodeId, Vec<u8>);
+
+static mut BYTES_SENDER: Option<Sender<RawPacket>> = None;
 
 pub struct NodeInfo {
     pub id: Vec<u8>,
@@ -24,7 +29,7 @@ pub struct CSHost {
 
 impl CSHost {
 
-    pub fn new(node_id: &[u8], tx: SyncSender<Vec<u8>>) -> Option<CSHost> {
+    pub fn new(node_id: &[u8], tx: Sender<RawPacket>) -> Option<CSHost> {
         let len = node_id.len();
         if len != NODE_ID_SIZE {
             return None;
@@ -47,7 +52,7 @@ impl CSHost {
         for h in hosts {
             if h.id.len() != NODE_ID_SIZE {
                 // todo panic!
-                println!("add_known_host() panic! incorrect id size {}, must be {}", h.id.len(), NODE_ID_SIZE);
+                info!("add_known_host() panic! incorrect id size {}, must be {}", h.id.len(), NODE_ID_SIZE);
                 continue;
             }
             unsafe {
@@ -83,7 +88,7 @@ impl CSHost {
 
     extern "C" fn on_message(id: *const u8, id_size: usize, data: *mut u8, data_size: usize) {
         if id_size != NODE_ID_SIZE {
-            println!("on_message() panic! incorrect id size {}, must be {}", id_size, NODE_ID_SIZE);
+            info!("on_message() panic! incorrect id size {}, must be {}", id_size, NODE_ID_SIZE);
             return;
         }
         let mut node_id: NodeId = Default::default();
@@ -96,12 +101,14 @@ impl CSHost {
                 payload = slice::from_raw_parts(data, data_size).to_vec();
             }
         } 
-        println!("Message of {} bytes received from {}", &payload.len(), node_id[..].to_base58());
+        info!("Message of {} bytes received from {}", &payload.len(), node_id[..].to_base58());
         unsafe {
             match BYTES_SENDER.clone() {
                 None => (),
                 Some(tx) => {
-                    tx.send(payload).unwrap();
+                    if tx.send((node_id, payload)).is_err() {
+                        info!("Failed to send {} bytes to packet_collecor", data_size);
+                    }
                 }
             };
         }
@@ -109,25 +116,25 @@ impl CSHost {
 
     extern "C" fn on_node_found(id: *const u8, id_size: usize) {
         if id_size != NODE_ID_SIZE {
-            println!("on_node_found() panic! incorrect id size {}, must be {}", id_size, NODE_ID_SIZE);
+            info!("on_node_found() panic! incorrect id size {}, must be {}", id_size, NODE_ID_SIZE);
             return;
         }
         let mut node_id: NodeId = Default::default();
         unsafe {
             ptr::copy(id, node_id.as_mut_ptr(), node_id.len());
         }
-        println!("Node {} found",  node_id[..].to_base58());
+        info!("Node {} found",  node_id[..].to_base58());
     }
 
     extern "C" fn on_node_lost(id: *const u8, id_size: usize) {
         if id_size != NODE_ID_SIZE {
-            println!("on_node_lost() panic! incorrect id size {}, must be {}", id_size, NODE_ID_SIZE);
+            info!("on_node_lost() panic! incorrect id size {}, must be {}", id_size, NODE_ID_SIZE);
             return;
         }
         let mut node_id: NodeId = Default::default();
         unsafe {
             ptr::copy(id, node_id.as_mut_ptr(), node_id.len());
         }
-        println!("Node {} lost", node_id[..].to_base58());
+        info!("Node {} lost", node_id[..].to_base58());
     }
 }
