@@ -75,8 +75,10 @@ namespace
 
             /*virtual*/
             void OnMessageReceived(const NodeId& from, ByteVector&& message) override;
+
             /*virtual*/
             void OnNodeDiscovered(const NodeId&) override;
+            
             /*virtual*/
             void OnNodeRemoved(const NodeId&) override;
 
@@ -93,6 +95,24 @@ namespace
 
             void set_node_removed_handler(NODE_HANDLER* proc) {
                 ptr_node_removed_handler = proc;
+            }
+
+            void send_to(const NodeId& to, ByteVector&& msg) {
+                if(ptr_host) {
+                    ptr_host->SendDirect(to, std::move(msg));
+                }
+            }
+
+            void broadcast(ByteVector&& msg) {
+                if(ptr_host) {
+                    ptr_host->SendBroadcast(std::move(msg));
+                }
+            }
+
+            void send_or_broadcast(const NodeId& to, ByteVector&& msg) {
+                if(ptr_host) {
+                    ptr_host->SendBroadcastIfNoConnection(to, std::move(msg));
+                }
             }
 
         private:
@@ -204,4 +224,50 @@ void set_node_discovered_handler(NODE_HANDLER* proc) {
 
 void set_node_removed_handler(NODE_HANDLER* proc) {
     HostHandler::instance().set_node_removed_handler(proc);
+}
+
+constexpr size_t NodeIdSize() {
+    return sizeof(NodeId);
+}
+
+void send_to(const uint8_t* key, size_t key_size, uint8_t* data, size_t data_size) {
+    if(key == nullptr || key_size != NodeIdSize()) {
+        std::cout << "send_to() panic! key_size must be " << NodeIdSize() << " bytes";
+        return;
+    }
+    NodeId id;
+    std::copy(key, key + key_size, reinterpret_cast<uint8_t*>(id.GetPtr()));
+    if(data == nullptr || data_size == 0) {
+        HostHandler::instance().send_to(id, std::vector<uint8_t>());
+    }
+    else {
+        std::vector<uint8_t> buf(data, data + data_size);
+        HostHandler::instance().send_to(id, std::move(buf));
+    }
+}
+
+void broadcast(uint8_t* data, size_t data_size) {
+    if(data == nullptr || data_size == 0) {
+        HostHandler::instance().broadcast(std::vector<uint8_t>());
+    }
+    else {
+        std::vector<uint8_t> buf(data, data + data_size);
+        HostHandler::instance().broadcast(std::move(buf));
+    }
+}
+
+void send_or_broadcast(const uint8_t* key, size_t key_size, uint8_t* data, size_t data_size) {
+    if(key == nullptr || key_size != NodeIdSize()) {
+        std::cout << "send_otr_broadcast() panic! key_size must be " << NodeIdSize() << " bytes";
+        return;
+    }
+    NodeId id;
+    std::copy(key, key + key_size, reinterpret_cast<uint8_t*>(id.GetPtr()));
+    if(data == nullptr || data_size == 0) {
+        HostHandler::instance().send_or_broadcast(id, std::vector<uint8_t>());
+    }
+    else {
+        std::vector<uint8_t> buf(data, data + data_size);
+        HostHandler::instance().send_or_broadcast(id, std::move(buf));
+    }
 }

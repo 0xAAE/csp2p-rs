@@ -19,4 +19,14 @@ extern "C" void set_message_handler(MESSAGE_HANDLER* proc);
 extern "C" void set_node_discovered_handler(NODE_HANDLER* proc);
 extern "C" void set_node_removed_handler(NODE_HANDLER* proc);
 
+extern "C" void send_to(const uint8_t* key, size_t key_size, uint8_t* data, size_t data_size);
+extern "C" void broadcast(uint8_t* data, size_t data_size);
+extern "C" void send_or_broadcast(const uint8_t* key, size_t key_size, uint8_t* data, size_t data_size);
+
+/*
+  void SendDirect(const NodeId& to, ByteVector&& msg);
+  void SendBroadcast(ByteVector&& msg);
+  void SendBroadcastIfNoConnection(const NodeId& to, ByteVector&& msg);
+*/
+
 #endif // _P2P_PORT_INCLUDED
