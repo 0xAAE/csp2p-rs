@@ -11,4 +11,8 @@ extern "C" {
     pub fn set_message_handler(pfn: MessageHandler);
     pub fn set_node_discovered_handler(pfn: NodeHandler);
     pub fn set_node_removed_handler(pfn: NodeHandler);
+
+    pub fn send_to(key: *const u8, key_size: usize, data: *const u8, data_size: usize);
+    pub fn broadcast(data: *const u8, data_size: usize);
+    pub fn send_or_broadcast(key: *const u8, key_size: usize, data: *const u8, data_size: usize);
 }
