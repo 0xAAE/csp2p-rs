@@ -230,7 +230,7 @@ constexpr size_t NodeIdSize() {
     return sizeof(NodeId);
 }
 
-void send_to(const uint8_t* key, size_t key_size, uint8_t* data, size_t data_size) {
+void send_to(const uint8_t* key, size_t key_size, const uint8_t* data, size_t data_size) {
     if(key == nullptr || key_size != NodeIdSize()) {
         std::cout << "send_to() panic! key_size must be " << NodeIdSize() << " bytes";
         return;
@@ -246,7 +246,7 @@ void send_to(const uint8_t* key, size_t key_size, uint8_t* data, size_t data_siz
     }
 }
 
-void broadcast(uint8_t* data, size_t data_size) {
+void broadcast(const uint8_t* data, size_t data_size) {
     if(data == nullptr || data_size == 0) {
         HostHandler::instance().broadcast(std::vector<uint8_t>());
     }
@@ -256,7 +256,7 @@ void broadcast(uint8_t* data, size_t data_size) {
     }
 }
 
-void send_or_broadcast(const uint8_t* key, size_t key_size, uint8_t* data, size_t data_size) {
+void send_or_broadcast(const uint8_t* key, size_t key_size, const uint8_t* data, size_t data_size) {
     if(key == nullptr || key_size != NodeIdSize()) {
         std::cout << "send_otr_broadcast() panic! key_size must be " << NodeIdSize() << " bytes";
         return;
