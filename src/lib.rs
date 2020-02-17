@@ -153,7 +153,7 @@ impl CSHost {
         }
     }
 
-    pub fn bradcast(data: &[u8]) {
+    pub fn broadcast(data: &[u8]) {
         let data_size = data.len();
         let data_ptr: *const u8 = data.as_ptr();
 
