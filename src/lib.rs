@@ -2,7 +2,7 @@ use std::{ptr, slice};
 use std::sync::mpsc::Sender;
 
 extern crate log;
-use log::{info, warn, error};
+use log::{debug, info, warn, error};
 
 pub const NODE_ID_SIZE: usize = 32;
 pub type NodeId = [u8; NODE_ID_SIZE];
@@ -101,7 +101,7 @@ impl CSHost {
                 payload = slice::from_raw_parts(data, data_size).to_vec();
             }
         } 
-        info!("message of {} bytes received from {}", &payload.len(), node_id[..].to_base58());
+        debug!("message of {} bytes received from {}", &payload.len(), node_id[..].to_base58());
         unsafe {
             match BYTES_SENDER.clone() {
                 None => (),
