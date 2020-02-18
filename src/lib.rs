@@ -124,6 +124,16 @@ impl CSHost {
             ptr::copy(id, node_id.as_mut_ptr(), node_id.len());
         }
         info!("node {} found",  node_id[..].to_base58());
+        unsafe {
+            match BYTES_SENDER.clone() {
+                None => (),
+                Some(tx) => {
+                    if tx.send((node_id, Vec::<u8>::new())).is_err() {
+                        warn!("failed to send node found to packet_collector");
+                    }
+                }
+            };
+        }
     }
 
     extern "C" fn on_node_lost(id: *const u8, id_size: usize) {
@@ -136,6 +146,16 @@ impl CSHost {
             ptr::copy(id, node_id.as_mut_ptr(), node_id.len());
         }
         info!("node {} lost", node_id[..].to_base58());
+        unsafe {
+            match BYTES_SENDER.clone() {
+                None => (),
+                Some(tx) => {
+                    if tx.send((node_id, Vec::<u8>::new())).is_err() {
+                        warn!("failed to send node lost to packet_collector");
+                    }
+                }
+            };
+        }
     }
 
     pub fn send_to(node_id: &[u8], data: &[u8]) {
