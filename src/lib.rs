@@ -128,7 +128,8 @@ impl CSHost {
             match BYTES_SENDER.clone() {
                 None => (),
                 Some(tx) => {
-                    if tx.send((node_id, Vec::<u8>::new())).is_err() {
+                    let payload = vec![1u8, 253u8]; // neighbour command == 1, found == 253
+                    if tx.send((node_id, payload)).is_err() {
                         warn!("failed to send node found to packet_collector");
                     }
                 }
@@ -150,7 +151,8 @@ impl CSHost {
             match BYTES_SENDER.clone() {
                 None => (),
                 Some(tx) => {
-                    if tx.send((node_id, Vec::<u8>::new())).is_err() {
+                    let payload = vec![1u8, 254u8]; // neighbour command == 1, lost == 254
+                    if tx.send((node_id, payload)).is_err() {
                         warn!("failed to send node lost to packet_collector");
                     }
                 }
