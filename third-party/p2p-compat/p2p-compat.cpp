@@ -61,7 +61,11 @@ namespace
                 ptr_host = std::make_unique<Host>(*ptr_config, *this);
             }
 
-            virtual ~HostHandler() = default;
+            virtual ~HostHandler() {
+                std::cout << "destructor of p2p::Host" << std::endl;
+                ptr_host.reset();
+                ptr_config.reset();
+            }
 
             void run() {
                 if(ptr_host) {
@@ -165,6 +169,7 @@ namespace
 
     void HostHandler::destroy() {
         if(HostHandler::ptr_inst) {
+            std::cout << "destroy host instance" << std::endl;
             ptr_inst.reset();
         }
     }
@@ -211,7 +216,9 @@ void host_start() {
 }
 
 void host_stop() {
+    std::cout << "Stop the host" << std::endl;
     HostHandler::instance().destroy();
+    std::cout << "Host has stopped" << std::endl;
 }
 
 void set_message_handler(MESSAGE_HANDLER* proc) {
