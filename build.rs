@@ -5,6 +5,7 @@ fn main() {
     println!(r"cargo:rustc-link-lib=static=bitcoin_utils");
     println!(r"cargo:rustc-link-lib=static=easylogging");
     println!(r"cargo:rustc-link-lib=static=miniupnpc");
+    println!(r"cargo:rustc-link-lib=static=leveldb");
     // Ubuntu
     #[cfg(target_os = "linux")]
     println!("cargo:rustc-link-lib=dylib=stdc++");

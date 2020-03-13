@@ -55,6 +55,7 @@ target_link_libraries(${PROJECT_NAME}
   PUBLIC bitcoin_utils
   PUBLIC easylogging
   PUBLIC miniupnpc-static
+  PUBLIC leveldb
   -static-libgcc -static-libstdc++)
 
 if(NOT MSVC)
