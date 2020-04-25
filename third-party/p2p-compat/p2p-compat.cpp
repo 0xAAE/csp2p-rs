@@ -86,6 +86,15 @@ namespace
             /*virtual*/
             void OnNodeRemoved(const NodeId&) override;
 
+            /*virtual*/
+            void OnFragmentFound(const FragmentId&, ByteVector&& value) override;
+
+            /*virtual*/
+            void OnFragmentNotFound(const FragmentId& id) override;
+
+            /*virtual*/
+            FragmentId GetFragmentId(const ByteVector& fragment) override;
+
             static HostHandler& instance();
             void destroy();
 
@@ -99,6 +108,18 @@ namespace
 
             void set_node_removed_handler(NODE_HANDLER* proc) {
                 ptr_node_removed_handler = proc;
+            }
+
+            void set_fragment_handler(FRAGMENT_HANDLER* proc) {
+                ptr_fragment_handler = proc;
+            }
+
+            void set_no_fragment_handler(NO_FRAGMENT_HANDLER* proc) {
+                ptr_no_fragment_handler = proc;
+            }
+
+            void set_fragment_id_factory(FRAGMENT_ID_FACTORY* proc) {
+                ptr_fragment_id_factory = proc;
             }
 
             void send_to(const NodeId& to, ByteVector&& msg) {
@@ -126,6 +147,9 @@ namespace
             MESSAGE_HANDLER* ptr_message_handler;
             NODE_HANDLER* ptr_node_discovered_handler;
             NODE_HANDLER* ptr_node_removed_handler;
+            FRAGMENT_HANDLER* ptr_fragment_handler;
+            NO_FRAGMENT_HANDLER* ptr_no_fragment_handler;
+            FRAGMENT_ID_FACTORY* ptr_fragment_id_factory;
 
             static std::unique_ptr<HostHandler> ptr_inst;
     };
@@ -157,6 +181,43 @@ namespace
                 id.size()
             );
         }
+    }
+
+    void HostHandler::OnFragmentFound(const FragmentId& id, ByteVector&& value) {
+        if(ptr_fragment_handler != nullptr) {
+            ptr_fragment_handler(
+                reinterpret_cast<const uint8_t*>(id.GetPtr()),
+                id.size(),
+                value.data(),
+                value.size()
+            );
+        }
+    }
+
+    void HostHandler::OnFragmentNotFound(const FragmentId& id) {
+        if(ptr_no_fragment_handler != nullptr) {
+            ptr_no_fragment_handler(
+                reinterpret_cast<const uint8_t*>(id.GetPtr()),
+                id.size()
+            );
+        }
+    }
+
+    FragmentId HostHandler::GetFragmentId(const ByteVector& fragment) {
+        FragmentId id;
+        if(ptr_fragment_id_factory != nullptr) {
+            ptr_fragment_id_factory(
+                fragment.data(),
+                fragment.size(),
+                reinterpret_cast<uint8_t*>(id.GetPtr()),
+                id.size()
+            );
+        }
+        else {
+            auto *ptr = reinterpret_cast<uint8_t*>(id.GetPtr());
+            std::fill(ptr, ptr + id.size(), 0);
+        }
+        return id;
     }
 
     /*static*/
@@ -231,6 +292,14 @@ void set_node_discovered_handler(NODE_HANDLER* proc) {
 
 void set_node_removed_handler(NODE_HANDLER* proc) {
     HostHandler::instance().set_node_removed_handler(proc);
+}
+
+void set_fragment_handler(FRAGMENT_HANDLER* proc) {
+    HostHandler::instance().set_fragment_handler(proc);
+}
+
+void set_no_fragment_handler(NO_FRAGMENT_HANDLER* proc) {
+    HostHandler::instance().set_no_fragment_handler(proc);
 }
 
 constexpr size_t NodeIdSize() {
