@@ -14,13 +14,18 @@ extern crate base58;
 use base58::ToBase58; // [u8].to_base58()
 
 extern crate blake2s_simd;
-use blake2s_simd::{blake2s, Hash};
+use blake2s_simd::blake2s;
 
 mod raw;
 
 pub type RawPacket = (NodeId, Vec<u8>);
 
 static mut BYTES_SENDER: Option<Sender<RawPacket>> = None;
+
+// Empty data means fragment is not found:
+pub type DataFragment = (FragmentId, Vec<u8>);
+
+static mut FRAGMENT_SENDER: Option<Sender<DataFragment>> = None;
 
 pub struct NodeInfo {
     pub id: Vec<u8>,
@@ -173,12 +178,67 @@ impl CSHost {
 
     // C compatible callback
     extern "C" fn on_fragment_found(id: *const u8, id_size: usize, data: *mut u8, data_size: usize) {
+        if id_size != FRAGMENT_ID_SIZE {
+            error!("contract violation! incorrect id size {}, must be {}", id_size, FRAGMENT_ID_SIZE);
+            return;
+        }
+        if data_size == 0 {
+            error!("contract violation! fragment data size must be greater than 0");
+            return;
+        }
+        let mut fragment_id: FragmentId = Default::default();
+        unsafe {
+            ptr::copy(id, fragment_id.as_mut_ptr(), FRAGMENT_ID_SIZE);
+        }
 
+        let data_view = unsafe {
+            slice::from_raw_parts(data, data_size)
+        };
+        // test data
+        let hash = blake2s(data_view);
+        if hash.as_bytes() != &fragment_id[..] {
+            error!("invalid fragment data received, drop");
+            return;
+        }
+        let fragment_data = data_view.to_vec();
+        debug!("fragment of {} bytes by id {} is received", &fragment_data.len(), fragment_id[..].to_base58());
+        
+        unsafe {
+            match FRAGMENT_SENDER.clone() {
+                None => {
+                    warn!("fragment collector is not set to send data to");
+                },
+                Some(tx) => {
+                    if tx.send((fragment_id, fragment_data)).is_err() {
+                        warn!("failed to send {} bytes of data fragment to collecor", data_size);
+                    }
+                }
+            };
+        }
     }
 
     // C compatible callback
     extern "C" fn on_fragment_not_found(id: *const u8, id_size: usize) {
-
+        if id_size != FRAGMENT_ID_SIZE {
+            error!("contract violation! incorrect id size {}, must be {}", id_size, FRAGMENT_ID_SIZE);
+            return;
+        }
+        let mut fragment_id: FragmentId = Default::default();
+        unsafe {
+            ptr::copy(id, fragment_id.as_mut_ptr(), FRAGMENT_ID_SIZE);
+        }
+        unsafe {
+            match FRAGMENT_SENDER.clone() {
+                None => {
+                    warn!("fragment collector is not set to send data to");
+                },
+                Some(tx) => {
+                    if tx.send((fragment_id, Vec::new())).is_err() {
+                        warn!("failed to send not found fragment to collecor");
+                    }
+                }
+            };
+        }
     }
 
     // C compatible callback
