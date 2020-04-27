@@ -302,6 +302,10 @@ void set_no_fragment_handler(NO_FRAGMENT_HANDLER* proc) {
     HostHandler::instance().set_no_fragment_handler(proc);
 }
 
+void set_fragment_id_factory(FRAGMENT_ID_FACTORY* proc) {
+    HostHandler::instance().set_fragment_id_factory(proc);
+}
+
 constexpr size_t NodeIdSize() {
     return sizeof(NodeId);
 }
