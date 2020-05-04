@@ -249,7 +249,7 @@ impl CSHost {
     //  3. FragmentId is a 32-byte blake2s hash of its data
 
     extern "C" fn on_fragment_id_required(data: *const u8, data_size: usize, id_buf: *mut u8, id_buf_size: usize) {
-        if data == std::ptr::null::<u8>() {
+        if data.is_null() {
             error!("contract violation! nullptr passed as data");
             return;
         }
@@ -257,7 +257,7 @@ impl CSHost {
             error!("contract violation! empty fragment passed to create an id");
             return;
         }
-        if id_buf == std::ptr::null_mut::<u8>() {
+        if id_buf.is_null() {
             error!("contract violation! buffer for id is nullptr")
         }
         if id_buf_size != FRAGMENT_ID_SIZE {
